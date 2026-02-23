@@ -1,17 +1,14 @@
-import { IsString, IsEnum, IsOptional, IsBoolean, IsInt, MaxLength } from 'class-validator';
-import { LocationType } from '../../../common/enums';
+import { IsString, IsOptional, IsBoolean, IsInt, MaxLength } from 'class-validator';
 
 export class CreateYardLocationDto {
   @IsString()
   @MaxLength(20)
-  code: string;
+  @IsOptional()
+  code?: string;
 
   @IsString()
   @MaxLength(255)
   name: string;
-
-  @IsEnum(LocationType)
-  type: LocationType;
 
   @IsInt()
   @IsOptional()

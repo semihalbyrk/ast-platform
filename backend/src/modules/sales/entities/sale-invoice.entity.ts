@@ -27,7 +27,7 @@ export class SaleInvoice extends SoftDeletableEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, name: 'total_incl_vat' })
   totalInclVat: number;
 
-  @Column({ type: 'enum', enum: POStatus, default: POStatus.DRAFT })
+  @Column({ type: 'enum', enum: POStatus, default: POStatus.READY })
   status: POStatus;
 
   @Column({ type: 'varchar', length: 500, nullable: true, name: 'pdf_url' })

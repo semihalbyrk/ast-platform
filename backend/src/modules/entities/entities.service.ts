@@ -79,4 +79,23 @@ export class EntitiesService {
 
     return { data: saved };
   }
+
+  async remove(id: string, userId: string) {
+    const existing = await this.entityRepository.findOne({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Entity with id ${id} not found`);
+    }
+
+    await this.entityRepository.softDelete(id);
+
+    await this.auditLogService.log({
+      entityType: 'entity',
+      entityId: existing.id,
+      action: 'delete',
+      oldValue: existing as unknown as Record<string, unknown>,
+      userId,
+    });
+
+    return { data: { id } };
+  }
 }

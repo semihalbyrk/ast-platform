@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Inbound } from './entities/inbound.entity';
 import { Contract } from '../contracts/entities/contract.entity';
-import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { WeighbridgeTicket } from '../weighbridge-tickets/entities/weighbridge-ticket.entity';
 import { InboundsService } from './inbounds.service';
 import { InboundsController } from './inbounds.controller';
@@ -12,7 +11,7 @@ import { PdfModule } from '../pdf/pdf.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Inbound, Contract, Vehicle, WeighbridgeTicket]),
+    TypeOrmModule.forFeature([Inbound, Contract, WeighbridgeTicket]),
     AuditLogModule,
     InventoryModule,
     PdfModule,

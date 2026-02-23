@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { PurchaseOrder } from './entities/purchase-order.entity';
 import { POLineItem } from './entities/po-line-item.entity';
 import { Inbound } from '../inbounds/entities/inbound.entity';
@@ -29,30 +29,73 @@ export class PurchaseOrdersService {
   // ─── GENERATE PO ────────────────────────────────────────
 
   async generate(dto: GeneratePurchaseOrderDto, userId: string) {
-    const inbounds = await this.inboundRepository.find({
-      where: {
-        supplierId: dto.supplierId,
-        status: InboundStatus.COMPLETED,
-        inboundDate: Between(
-          new Date(dto.periodStart),
-          new Date(dto.periodEnd + 'T23:59:59.999Z'),
-        ),
-      },
-      relations: ['contract', 'material'],
-      order: { inboundDate: 'ASC' },
-    });
+    let inbounds: Inbound[];
+
+    if (dto.inboundIds && dto.inboundIds.length > 0) {
+      // Single or specific inbound PO
+      inbounds = await this.inboundRepository.find({
+        where: {
+          id: In(dto.inboundIds),
+          status: InboundStatus.COMPLETED,
+        },
+        relations: ['contract', 'material', 'supplier'],
+        order: { inboundDate: 'ASC' },
+      });
+
+      inbounds = inbounds.filter((ib) => ib.contract?.entityId === dto.clientId);
+    } else if (dto.periodStart && dto.periodEnd) {
+      // Bulk PO by client + date range — query via contract.entityId
+      const qb = this.inboundRepository
+        .createQueryBuilder('inbound')
+        .leftJoinAndSelect('inbound.contract', 'contract')
+        .leftJoinAndSelect('inbound.material', 'material')
+        .leftJoinAndSelect('inbound.supplier', 'supplier')
+        .where('inbound.status = :status', { status: InboundStatus.COMPLETED })
+        .andWhere('contract.entityId = :clientId', { clientId: dto.clientId })
+        .andWhere('inbound.inboundDate >= :start', { start: new Date(dto.periodStart) })
+        .andWhere('inbound.inboundDate <= :end', { end: new Date(dto.periodEnd + 'T23:59:59.999Z') })
+        .orderBy('inbound.inboundDate', 'ASC');
+
+      inbounds = await qb.getMany();
+    } else {
+      throw new BadRequestException(
+        'Either inboundIds or periodStart+periodEnd must be provided',
+      );
+    }
+
+    if (inbounds.length === 0) {
+      throw new BadRequestException(
+        'No completed inbounds found for the given criteria',
+      );
+    }
+
+    const inboundIds = inbounds.map((ib) => ib.id);
+    const linkedCount = await this.lineItemRepository
+      .createQueryBuilder('li')
+      .where('li.inbound_id IN (:...inboundIds)', { inboundIds })
+      .getCount();
+    if (linkedCount > 0) {
+      throw new BadRequestException('One or more selected inbounds already have a purchase order.');
+    }
 
     const poNumber = await this.generatePoNumber();
 
-    // Determine payment terms from first inbound's contract or supplier
     let paymentTerms = 7;
-    if (inbounds.length > 0 && inbounds[0].contract?.paymentTerms) {
+    if (inbounds[0].contract?.paymentTerms) {
       paymentTerms = inbounds[0].contract.paymentTerms;
     }
 
     const issueDate = new Date();
     const paymentDueDate = new Date(issueDate);
     paymentDueDate.setDate(paymentDueDate.getDate() + paymentTerms);
+
+    const dates = inbounds.map((i) => new Date(i.inboundDate));
+    const periodStart = dto.periodStart
+      ? new Date(dto.periodStart)
+      : new Date(Math.min(...dates.map((d) => d.getTime())));
+    const periodEnd = dto.periodEnd
+      ? new Date(dto.periodEnd)
+      : new Date(Math.max(...dates.map((d) => d.getTime())));
 
     // Build line items
     const lineItems: Partial<POLineItem>[] = [];
@@ -76,7 +119,6 @@ export class PurchaseOrdersService {
       });
       subtotal += materialCost;
 
-      // Impurity line (only if there's impurity weight and a deduction rate)
       const impWeight = (inbound.netWeight ?? 0) - (inbound.netWeightAfterImp ?? inbound.netWeight ?? 0);
       const impDeductionRate = Number(inbound.contract?.impDeduction) || 0;
 
@@ -97,29 +139,45 @@ export class PurchaseOrdersService {
     }
 
     const totalExclVat = Math.round((subtotal + impurityTotal) * 100) / 100;
-    const vatPct = 0; // EU reverse charge
-    const vatAmount = 0;
-    const totalInclVat = totalExclVat + vatAmount;
+    const totalInclVat = totalExclVat;
 
     const po = this.poRepository.create({
       poNumber,
-      supplierId: dto.supplierId,
-      contractId: inbounds.length > 0 ? inbounds[0].contractId : null,
-      periodStart: new Date(dto.periodStart),
-      periodEnd: new Date(dto.periodEnd),
+      clientId: dto.clientId,
+      contractId: inbounds[0].contractId,
+      periodStart,
+      periodEnd,
       issueDate,
       paymentDueDate,
-      status: POStatus.DRAFT,
+      status: POStatus.READY,
       totalExclVat,
-      vat: vatAmount,
+      vat: 0,
       totalInclVat,
-      vatCode: String(vatPct),
+      vatCode: '0',
       lineItems: lineItems as POLineItem[],
       createdBy: userId,
       updatedBy: userId,
     });
 
     const saved = await this.poRepository.save(po);
+
+    // Generate PDF immediately
+    const fullPo = await this.poRepository.findOne({
+      where: { id: saved.id },
+      relations: [
+        'client',
+        'contract',
+        'lineItems',
+        'lineItems.inbound',
+        'lineItems.inbound.material',
+        'lineItems.inbound.contract',
+      ],
+    });
+    if (fullPo) {
+      const pdfUrl = await this.pdfService.generateInvoicePdf(fullPo);
+      saved.pdfUrl = pdfUrl;
+      await this.poRepository.save(saved);
+    }
 
     await this.auditLogService.log({
       entityType: 'purchase_order',
@@ -136,7 +194,8 @@ export class PurchaseOrdersService {
 
   async findAll(filters?: {
     status?: POStatus;
-    supplierId?: string;
+    clientId?: string;
+    inboundId?: string;
     page?: number;
     limit?: number;
   }) {
@@ -145,15 +204,18 @@ export class PurchaseOrdersService {
 
     const qb = this.poRepository
       .createQueryBuilder('po')
-      .leftJoinAndSelect('po.supplier', 'supplier')
+      .leftJoinAndSelect('po.client', 'client')
       .loadRelationCountAndMap('po.lineItemCount', 'po.lineItems');
 
     if (filters?.status) {
       qb.andWhere('po.status = :status', { status: filters.status });
     }
-    if (filters?.supplierId) {
-      qb.andWhere('po.supplierId = :supplierId', {
-        supplierId: filters.supplierId,
+    if (filters?.clientId) {
+      qb.andWhere('po.clientId = :clientId', { clientId: filters.clientId });
+    }
+    if (filters?.inboundId) {
+      qb.innerJoin('po.lineItems', 'lineItemFilter', 'lineItemFilter.inbound_id = :inboundId', {
+        inboundId: filters.inboundId,
       });
     }
 
@@ -168,12 +230,19 @@ export class PurchaseOrdersService {
   async findOne(id: string) {
     const po = await this.poRepository.findOne({
       where: { id },
-      relations: ['supplier', 'contract', 'lineItems', 'lineItems.inbound'],
+      relations: [
+        'client',
+        'contract',
+        'lineItems',
+        'lineItems.inbound',
+        'lineItems.inbound.material',
+        'lineItems.inbound.contract',
+        'lineItems.inbound.supplier',
+      ],
     });
     if (!po) {
       throw new NotFoundException(`Purchase order with id ${id} not found`);
     }
-    // Sort line items: material first, then impurity, grouped by inbound
     po.lineItems.sort((a, b) => {
       if (a.inboundId === b.inboundId) {
         return a.lineType === LineType.MATERIAL ? -1 : 1;
@@ -187,23 +256,25 @@ export class PurchaseOrdersService {
 
   async approve(id: string, userId: string) {
     const po = await this.poRepository.findOne({ where: { id } });
-    if (!po) {
-      throw new NotFoundException(`Purchase order with id ${id} not found`);
-    }
-    if (po.status !== POStatus.DRAFT) {
-      throw new BadRequestException(
-        `Cannot approve PO in status "${po.status}". Expected "draft".`,
-      );
+    if (!po) throw new NotFoundException(`Purchase order with id ${id} not found`);
+    if (po.status !== POStatus.READY) {
+      throw new BadRequestException(`Cannot approve PO in status "${po.status}". Expected "ready".`);
     }
 
     const oldStatus = po.status;
-    po.status = POStatus.APPROVED;
+    po.status = POStatus.READY;
     po.updatedBy = userId;
 
-    // Generate invoice PDF
     const fullPo = await this.poRepository.findOne({
       where: { id },
-      relations: ['supplier', 'contract', 'lineItems', 'lineItems.inbound'],
+      relations: [
+        'client',
+        'contract',
+        'lineItems',
+        'lineItems.inbound',
+        'lineItems.inbound.material',
+        'lineItems.inbound.contract',
+      ],
     });
     const pdfUrl = await this.pdfService.generateInvoicePdf(fullPo!);
     po.pdfUrl = pdfUrl;
@@ -224,16 +295,11 @@ export class PurchaseOrdersService {
 
   async reject(id: string, reason: string | undefined, userId: string) {
     const po = await this.poRepository.findOne({ where: { id } });
-    if (!po) {
-      throw new NotFoundException(`Purchase order with id ${id} not found`);
-    }
-    if (po.status !== POStatus.DRAFT) {
-      throw new BadRequestException(
-        `Cannot reject PO in status "${po.status}". Expected "draft".`,
-      );
+    if (!po) throw new NotFoundException(`Purchase order with id ${id} not found`);
+    if (po.status !== POStatus.READY) {
+      throw new BadRequestException(`Cannot reject PO in status "${po.status}". Expected "ready".`);
     }
 
-    const oldStatus = po.status;
     po.status = POStatus.REJECTED;
     po.updatedBy = userId;
     const saved = await this.poRepository.save(po);
@@ -242,8 +308,62 @@ export class PurchaseOrdersService {
       entityType: 'purchase_order',
       entityId: saved.id,
       action: 'reject',
-      oldValue: { status: oldStatus },
+      oldValue: { status: po.status },
       newValue: { status: saved.status, reason },
+      userId,
+    });
+
+    return this.findOne(saved.id);
+  }
+
+  async markPaid(id: string, userId: string) {
+    const po = await this.poRepository.findOne({ where: { id } });
+    if (!po) throw new NotFoundException(`Purchase order with id ${id} not found`);
+    if (po.status !== POStatus.READY) {
+      throw new BadRequestException(`Cannot mark PO as paid in status "${po.status}". Expected "ready".`);
+    }
+
+    const oldStatus = po.status;
+    po.status = POStatus.PAID;
+    po.updatedBy = userId;
+    const saved = await this.poRepository.save(po);
+
+    await this.auditLogService.log({
+      entityType: 'purchase_order',
+      entityId: saved.id,
+      action: 'mark_paid',
+      oldValue: { status: oldStatus },
+      newValue: { status: saved.status },
+      userId,
+    });
+
+    return this.findOne(saved.id);
+  }
+
+  async setStatus(id: string, status: POStatus, userId: string) {
+    const po = await this.poRepository.findOne({ where: { id } });
+    if (!po) throw new NotFoundException(`Purchase order with id ${id} not found`);
+
+    const allowedNext: POStatus[] = [POStatus.READY, POStatus.PAID, POStatus.REJECTED];
+    if (!allowedNext.includes(status)) {
+      throw new BadRequestException('Unsupported PO status.');
+    }
+
+    if (po.status !== POStatus.READY && status !== po.status) {
+      throw new BadRequestException(`Status change allowed only from "ready". Current: "${po.status}".`);
+    }
+
+    const oldStatus = po.status;
+    po.status = status;
+    po.updatedBy = userId;
+    const saved = await this.poRepository.save(po);
+
+    await this.auditLogService.log({
+      entityType: 'purchase_order',
+      entityId: saved.id,
+      action: 'set_status',
+      oldValue: { status: oldStatus },
+      newValue: { status: saved.status },
       userId,
     });
 
@@ -268,9 +388,7 @@ export class PurchaseOrdersService {
     let sequence = 1;
     if (latest) {
       const lastSeq = parseInt(latest.poNumber.split('-').pop() ?? '0', 10);
-      if (!isNaN(lastSeq)) {
-        sequence = lastSeq + 1;
-      }
+      if (!isNaN(lastSeq)) sequence = lastSeq + 1;
     }
 
     return `${prefix}-${String(sequence).padStart(3, '0')}`;

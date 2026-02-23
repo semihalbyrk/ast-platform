@@ -1,14 +1,21 @@
-import { IsUUID, IsDateString, IsString, IsOptional } from 'class-validator';
+import { IsUUID, IsDateString, IsString, IsOptional, IsArray } from 'class-validator';
 
 export class GeneratePurchaseOrderDto {
   @IsUUID()
-  supplierId: string;
+  clientId: string;
 
   @IsDateString()
-  periodStart: string;
+  @IsOptional()
+  periodStart?: string;
 
   @IsDateString()
-  periodEnd: string;
+  @IsOptional()
+  periodEnd?: string;
+
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  inboundIds?: string[];
 
   @IsString()
   @IsOptional()

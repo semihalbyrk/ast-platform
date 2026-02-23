@@ -1,8 +1,5 @@
 export enum POStatus {
-  DRAFT = 'draft',
-  APPROVED = 'approved',
+  READY = 'ready',
   REJECTED = 'rejected',
-  SENT = 'sent',
-  ACCEPTED = 'accepted',
   PAID = 'paid',
 }

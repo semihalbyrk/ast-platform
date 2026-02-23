@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -54,5 +55,15 @@ export class MaterialsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.materialsService.update(id, dto, userId);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.materialsService.remove(id, userId);
   }
 }

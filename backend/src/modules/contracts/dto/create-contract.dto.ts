@@ -24,11 +24,15 @@ export class CreateContractDto {
   status?: ContractStatus;
 
   @IsUUID()
+  @IsOptional()
+  clientId?: string | null;
+
+  @IsUUID()
   entityId: string;
 
   @IsUUID()
   @IsOptional()
-  ladenLossenId?: string | null;
+  transporterId?: string | null;
 
   @IsUUID()
   materialId: string;
@@ -51,10 +55,6 @@ export class CreateContractDto {
   @IsDateString()
   endDate: string;
 
-  @IsInt()
-  @IsOptional()
-  paymentTerms?: number | null;
-
   @IsString()
   @IsOptional()
   @MaxLength(255)
@@ -64,9 +64,9 @@ export class CreateContractDto {
   @IsOptional()
   maxTruckloads?: number | null;
 
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
-  stdGewicht?: number | null;
+  freights?: number | null;
 
   @IsString()
   @IsOptional()

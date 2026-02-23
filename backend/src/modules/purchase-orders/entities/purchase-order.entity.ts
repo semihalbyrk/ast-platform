@@ -12,10 +12,10 @@ export class PurchaseOrder extends SoftDeletableEntity {
 
   @ManyToOne(() => EntityRecord)
   @JoinColumn({ name: 'supplier_id' })
-  supplier: EntityRecord;
+  client: EntityRecord;
 
   @Column({ type: 'uuid', name: 'supplier_id' })
-  supplierId: string;
+  clientId: string;
 
   @ManyToOne(() => Contract, (c) => c.purchaseOrders, { nullable: true })
   @JoinColumn({ name: 'contract_id' })
@@ -36,7 +36,7 @@ export class PurchaseOrder extends SoftDeletableEntity {
   @Column({ type: 'date', nullable: true, name: 'payment_due_date' })
   paymentDueDate: Date | null;
 
-  @Column({ type: 'enum', enum: POStatus, default: POStatus.DRAFT })
+  @Column({ type: 'enum', enum: POStatus, default: POStatus.READY })
   status: POStatus;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'total_excl_vat' })

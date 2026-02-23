@@ -27,12 +27,13 @@ export class ContractsService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  async findAll(filters?: { status?: ContractStatus; includeGesloten?: boolean }) {
+  async findAll(filters?: { status?: ContractStatus; includeGesloten?: boolean; entityId?: string }) {
     const qb = this.contractRepository
       .createQueryBuilder('contract')
+      .leftJoinAndSelect('contract.client', 'client')
       .leftJoinAndSelect('contract.entity', 'entity')
       .leftJoinAndSelect('contract.material', 'material')
-      .leftJoinAndSelect('contract.ladenLossen', 'ladenLossen')
+      .leftJoinAndSelect('contract.transporter', 'transporter')
       .leftJoin('contract.inbounds', 'inbound_completed', 'inbound_completed.status = :completedStatus', {
         completedStatus: InboundStatus.COMPLETED,
       })
@@ -42,9 +43,14 @@ export class ContractsService {
       })
       .addSelect('COALESCE(SUM(inbound_linked.net_weight), 0)', 'linked_weight')
       .groupBy('contract.id')
+      .addGroupBy('client.id')
       .addGroupBy('entity.id')
       .addGroupBy('material.id')
-      .addGroupBy('ladenLossen.id');
+      .addGroupBy('transporter.id');
+
+    if (filters?.entityId) {
+      qb.andWhere('contract.entityId = :entityId', { entityId: filters.entityId });
+    }
 
     if (filters?.status) {
       qb.andWhere('contract.status = :status', { status: filters.status });
@@ -66,9 +72,10 @@ export class ContractsService {
   async findOne(id: string) {
     const qb = this.contractRepository
       .createQueryBuilder('contract')
+      .leftJoinAndSelect('contract.client', 'client')
       .leftJoinAndSelect('contract.entity', 'entity')
       .leftJoinAndSelect('contract.material', 'material')
-      .leftJoinAndSelect('contract.ladenLossen', 'ladenLossen')
+      .leftJoinAndSelect('contract.transporter', 'transporter')
       .leftJoin('contract.inbounds', 'inbound_completed', 'inbound_completed.status = :completedStatus', {
         completedStatus: InboundStatus.COMPLETED,
       })
@@ -79,9 +86,10 @@ export class ContractsService {
       .addSelect('COALESCE(SUM(inbound_linked.net_weight), 0)', 'linked_weight')
       .where('contract.id = :id', { id })
       .groupBy('contract.id')
+      .addGroupBy('client.id')
       .addGroupBy('entity.id')
       .addGroupBy('material.id')
-      .addGroupBy('ladenLossen.id');
+      .addGroupBy('transporter.id');
 
     const result = await qb.getRawAndEntities();
     if (!result.entities.length) {
@@ -101,6 +109,7 @@ export class ContractsService {
 
     const contract = this.contractRepository.create({
       ...dto,
+      status: dto.status ?? ContractStatus.LOPEND,
       createdBy: userId,
       updatedBy: userId,
     });
@@ -146,6 +155,25 @@ export class ContractsService {
     });
 
     return { data: saved };
+  }
+
+  async remove(id: string, userId: string) {
+    const existing = await this.contractRepository.findOne({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Contract with id ${id} not found`);
+    }
+
+    await this.contractRepository.softDelete(id);
+
+    await this.auditLogService.log({
+      entityType: 'contract',
+      entityId: existing.id,
+      action: 'delete',
+      oldValue: existing as unknown as Record<string, unknown>,
+      userId,
+    });
+
+    return { data: { id } };
   }
 
   private attachCalculations(

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -27,10 +28,12 @@ export class ContractsController {
   async findAll(
     @Query('status') status?: ContractStatus,
     @Query('includeGesloten') includeGesloten?: string,
+    @Query('entityId') entityId?: string,
   ) {
     return this.contractsService.findAll({
       status,
       includeGesloten: includeGesloten === 'true',
+      entityId,
     });
   }
 
@@ -58,5 +61,15 @@ export class ContractsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.contractsService.update(id, dto, userId);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.contractsService.remove(id, userId);
   }
 }

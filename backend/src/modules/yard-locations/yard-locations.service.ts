@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { YardLocation } from './entities/yard-location.entity';
 import { CreateYardLocationDto } from './dto/create-yard-location.dto';
 import { UpdateYardLocationDto } from './dto/update-yard-location.dto';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { LocationType } from '../../common/enums';
 
 @Injectable()
 export class YardLocationsService {
@@ -36,13 +37,16 @@ export class YardLocationsService {
   }
 
   async create(dto: CreateYardLocationDto, userId: string) {
-    const existing = await this.locationRepository.findOne({ where: { code: dto.code } });
-    if (existing) {
-      throw new ConflictException(`Yard location with code '${dto.code}' already exists`);
+    if (dto.code) {
+      const existing = await this.locationRepository.findOne({ where: { code: dto.code } });
+      if (existing) {
+        throw new ConflictException(`Yard location with code '${dto.code}' already exists`);
+      }
     }
 
     const location = this.locationRepository.create({
       ...dto,
+      type: LocationType.STORAGE_BAY,
       createdBy: userId,
       updatedBy: userId,
     });
@@ -86,5 +90,31 @@ export class YardLocationsService {
     });
 
     return { data: saved };
+  }
+
+  async remove(id: string, userId: string) {
+    const existing = await this.locationRepository.findOne({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Yard location with id ${id} not found`);
+    }
+
+    try {
+      await this.locationRepository.delete(id);
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        throw new ConflictException('Yard location cannot be deleted because it is referenced by other records.');
+      }
+      throw err;
+    }
+
+    await this.auditLogService.log({
+      entityType: 'yard_location',
+      entityId: existing.id,
+      action: 'delete',
+      oldValue: existing as unknown as Record<string, unknown>,
+      userId,
+    });
+
+    return { data: { id } };
   }
 }

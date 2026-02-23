@@ -11,3 +11,4 @@ export { MovementType } from './movement-type.enum';
 export { DocumentType } from './document-type.enum';
 export { UserRole } from './user-role.enum';
 export { LineType } from './line-type.enum';
+export { WeightUom } from './weight-uom.enum';

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -58,5 +59,15 @@ export class EntitiesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.entitiesService.update(id, dto, userId);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.entitiesService.remove(id, userId);
   }
 }

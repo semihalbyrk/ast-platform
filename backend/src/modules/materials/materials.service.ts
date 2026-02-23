@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { MaterialType } from './entities/material-type.entity';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
@@ -14,14 +14,8 @@ export class MaterialsService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  async findAll(filters?: { active?: boolean }) {
-    const where: Record<string, unknown> = {};
-    if (filters?.active !== undefined) {
-      where.active = filters.active;
-    }
-
+  async findAll(_filters?: { active?: boolean }) {
     const [data, total] = await this.materialRepository.findAndCount({
-      where,
       order: { code: 'ASC' },
     });
     return { data, meta: { total } };
@@ -36,9 +30,11 @@ export class MaterialsService {
   }
 
   async create(dto: CreateMaterialDto, userId: string) {
-    const existing = await this.materialRepository.findOne({ where: { code: dto.code } });
-    if (existing) {
-      throw new ConflictException(`Material with code '${dto.code}' already exists`);
+    if (dto.code) {
+      const existing = await this.materialRepository.findOne({ where: { code: dto.code } });
+      if (existing) {
+        throw new ConflictException(`Material with code '${dto.code}' already exists`);
+      }
     }
 
     const material = this.materialRepository.create({
@@ -86,5 +82,31 @@ export class MaterialsService {
     });
 
     return { data: saved };
+  }
+
+  async remove(id: string, userId: string) {
+    const existing = await this.materialRepository.findOne({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(`Material with id ${id} not found`);
+    }
+
+    try {
+      await this.materialRepository.delete(id);
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        throw new ConflictException('Material cannot be deleted because it is referenced by other records.');
+      }
+      throw err;
+    }
+
+    await this.auditLogService.log({
+      entityType: 'material_type',
+      entityId: existing.id,
+      action: 'delete',
+      oldValue: existing as unknown as Record<string, unknown>,
+      userId,
+    });
+
+    return { data: { id } };
   }
 }

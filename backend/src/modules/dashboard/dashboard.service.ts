@@ -153,10 +153,10 @@ export class DashboardService {
     }
 
     return {
-      draft_count: byStatus[POStatus.DRAFT]?.count ?? 0,
-      draft_value_eur: byStatus[POStatus.DRAFT]?.value ?? 0,
-      approved_count: byStatus[POStatus.APPROVED]?.count ?? 0,
-      approved_value_eur: byStatus[POStatus.APPROVED]?.value ?? 0,
+      ready_count: byStatus[POStatus.READY]?.count ?? 0,
+      ready_value_eur: byStatus[POStatus.READY]?.value ?? 0,
+      paid_count: byStatus[POStatus.PAID]?.count ?? 0,
+      paid_value_eur: byStatus[POStatus.PAID]?.value ?? 0,
       rejected_count: byStatus[POStatus.REJECTED]?.count ?? 0,
     };
   }

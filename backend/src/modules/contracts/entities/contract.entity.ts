@@ -17,6 +17,13 @@ export class Contract extends SoftDeletableEntity {
   @Column({ type: 'enum', enum: ContractStatus, default: ContractStatus.CONCEPT })
   status: ContractStatus;
 
+  @ManyToOne(() => EntityRecord, { nullable: true })
+  @JoinColumn({ name: 'client_id' })
+  client: EntityRecord | null;
+
+  @Column({ type: 'uuid', nullable: true, name: 'client_id' })
+  clientId: string | null;
+
   @ManyToOne(() => EntityRecord, (e) => e.contracts)
   @JoinColumn({ name: 'entity_id' })
   entity: EntityRecord;
@@ -26,10 +33,10 @@ export class Contract extends SoftDeletableEntity {
 
   @ManyToOne(() => EntityRecord, { nullable: true })
   @JoinColumn({ name: 'laden_lossen_id' })
-  ladenLossen: EntityRecord | null;
+  transporter: EntityRecord | null;
 
   @Column({ type: 'uuid', nullable: true, name: 'laden_lossen_id' })
-  ladenLossenId: string | null;
+  transporterId: string | null;
 
   @ManyToOne(() => MaterialType, (m) => m.contracts)
   @JoinColumn({ name: 'material_id' })
@@ -61,6 +68,9 @@ export class Contract extends SoftDeletableEntity {
 
   @Column({ type: 'integer', nullable: true, name: 'max_truckloads' })
   maxTruckloads: number | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  freights: number | null;
 
   @Column({ type: 'integer', nullable: true, name: 'std_gewicht' })
   stdGewicht: number | null;

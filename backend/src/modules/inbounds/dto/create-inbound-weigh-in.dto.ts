@@ -3,20 +3,20 @@ import {
   IsString,
   IsInt,
   IsOptional,
+  IsNumber,
   Min,
   MaxLength,
 } from 'class-validator';
 
 export class CreateInboundWeighInDto {
   @IsUUID()
-  contractId: string;
-
-  @IsUUID()
-  vehicleId: string;
+  @IsOptional()
+  contractId?: string;
 
   @IsString()
   @MaxLength(20)
-  licensePlate: string;
+  @IsOptional()
+  licensePlate?: string;
 
   @IsUUID()
   supplierId: string;
@@ -24,6 +24,19 @@ export class CreateInboundWeighInDto {
   @IsInt()
   @Min(1)
   grossWeight: number;
+
+  @IsUUID()
+  @IsOptional()
+  materialId?: string;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsOptional()
+  @Min(0)
+  pricePerTon?: number;
+
+  @IsUUID()
+  @IsOptional()
+  transporterId?: string;
 
   @IsString()
   @IsOptional()

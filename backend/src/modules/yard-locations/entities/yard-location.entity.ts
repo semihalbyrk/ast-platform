@@ -5,8 +5,8 @@ import { InventoryPosition } from '../../inventory/entities/inventory-position.e
 
 @Entity('yard_locations')
 export class YardLocation extends BaseEntity {
-  @Column({ type: 'varchar', length: 20, unique: true })
-  code: string;
+  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
+  code: string | null;
 
   @Column({ type: 'varchar', length: 255 })
   name: string;

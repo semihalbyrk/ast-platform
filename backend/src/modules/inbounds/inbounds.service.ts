@@ -8,7 +8,6 @@ import { Repository } from 'typeorm';
 import { Inbound } from './entities/inbound.entity';
 import { WeighbridgeTicket } from '../weighbridge-tickets/entities/weighbridge-ticket.entity';
 import { Contract } from '../contracts/entities/contract.entity';
-import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { CreateInboundWeighInDto } from './dto/create-inbound-weigh-in.dto';
 import { UpdateInboundQualityDto } from './dto/update-inbound-quality.dto';
 import { UpdateInboundWeighOutDto } from './dto/update-inbound-weigh-out.dto';
@@ -35,8 +34,6 @@ export class InboundsService {
     private readonly inboundRepository: Repository<Inbound>,
     @InjectRepository(Contract)
     private readonly contractRepository: Repository<Contract>,
-    @InjectRepository(Vehicle)
-    private readonly vehicleRepository: Repository<Vehicle>,
     @InjectRepository(WeighbridgeTicket)
     private readonly ticketRepository: Repository<WeighbridgeTicket>,
     private readonly auditLogService: AuditLogService,
@@ -96,23 +93,39 @@ export class InboundsService {
   // ─── PHASE 5a: WEIGH-IN ─────────────────────────────────
 
   async weighIn(dto: CreateInboundWeighInDto, userId: string) {
-    const contract = await this.contractRepository.findOne({
-      where: { id: dto.contractId },
-      relations: ['material'],
-    });
-    if (!contract) {
-      throw new NotFoundException(
-        `Contract with id ${dto.contractId} not found`,
-      );
-    }
+    let materialId: string;
+    let pricePerTon: number | null = null;
+    let transporterId: string | null = null;
+    let contractId: string | null = null;
 
-    const vehicle = await this.vehicleRepository.findOne({
-      where: { id: dto.vehicleId },
-    });
-    if (!vehicle) {
-      throw new NotFoundException(
-        `Vehicle with id ${dto.vehicleId} not found`,
-      );
+    if (dto.contractId) {
+      const contract = await this.contractRepository.findOne({
+        where: { id: dto.contractId },
+        relations: ['material', 'transporter'],
+      });
+      if (!contract) {
+        throw new NotFoundException(
+          `Contract with id ${dto.contractId} not found`,
+        );
+      }
+      contractId = contract.id;
+      materialId = contract.materialId;
+      pricePerTon = contract.price;
+      transporterId = contract.transporterId ?? null;
+
+      // Allow DTO overrides
+      if (dto.pricePerTon !== undefined) pricePerTon = dto.pricePerTon;
+      if (dto.transporterId !== undefined) transporterId = dto.transporterId;
+    } else {
+      // No contract mode — materialId is required
+      if (!dto.materialId) {
+        throw new BadRequestException(
+          'materialId is required when no contract is provided',
+        );
+      }
+      materialId = dto.materialId;
+      pricePerTon = dto.pricePerTon ?? null;
+      transporterId = dto.transporterId ?? null;
     }
 
     const weegbonNr = await this.generateWeegbonNr();
@@ -120,13 +133,13 @@ export class InboundsService {
     const inbound = this.inboundRepository.create({
       weegbonNr,
       inboundDate: new Date(),
-      vehicleId: dto.vehicleId,
-      licensePlate: dto.licensePlate,
-      transporterId: vehicle.transporterId,
+      vehicleId: null,
+      licensePlate: dto.licensePlate ?? null,
+      transporterId,
       supplierId: dto.supplierId,
-      contractId: dto.contractId,
-      materialId: contract.materialId,
-      pricePerTon: contract.price,
+      contractId,
+      materialId,
+      pricePerTon,
       grossWeight: dto.grossWeight,
       grossWeightAt: new Date(),
       status: InboundStatus.WEIGHED_IN,

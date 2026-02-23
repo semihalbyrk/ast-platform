@@ -129,11 +129,11 @@ export class InventoryService {
 
     const materialMap = new Map<
       string,
-      { code: string; quantityKg: number; valueEur: number }
+      { code: string | null; quantityKg: number; valueEur: number }
     >();
     const locationMap = new Map<
       string,
-      { code: string; quantityKg: number; valueEur: number }
+      { code: string | null; quantityKg: number; valueEur: number }
     >();
 
     for (const p of active) {
