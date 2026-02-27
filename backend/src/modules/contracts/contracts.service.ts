@@ -100,20 +100,43 @@ export class ContractsService {
   }
 
   async create(dto: CreateContractDto, userId: string) {
-    const existing = await this.contractRepository.findOne({
-      where: { number: dto.number },
-    });
-    if (existing) {
-      throw new ConflictException(`Contract number ${dto.number} already exists`);
+    if (dto.number) {
+      const existing = await this.contractRepository.findOne({
+        where: { number: dto.number },
+      });
+      if (existing) {
+        throw new ConflictException(`Contract number ${dto.number} already exists`);
+      }
     }
 
-    const contract = this.contractRepository.create({
-      ...dto,
-      status: dto.status ?? ContractStatus.LOPEND,
-      createdBy: userId,
-      updatedBy: userId,
-    });
-    const saved = await this.contractRepository.save(contract);
+    const maxRetries = 5;
+    let saved: Contract | null = null;
+    let lastError: unknown = null;
+
+    for (let i = 0; i < maxRetries; i++) {
+      const number = dto.number ?? (await this.generateContractNumber());
+      const contract = this.contractRepository.create({
+        ...dto,
+        number,
+        status: dto.status ?? ContractStatus.LOPEND,
+        createdBy: userId,
+        updatedBy: userId,
+      });
+
+      try {
+        saved = await this.contractRepository.save(contract);
+        break;
+      } catch (error) {
+        lastError = error;
+        const message = error instanceof Error ? error.message : '';
+        const isDuplicateNumber = message.includes('duplicate key') && message.includes('number');
+        if (!isDuplicateNumber || dto.number) throw error;
+      }
+    }
+
+    if (!saved) {
+      throw (lastError instanceof Error ? lastError : new ConflictException('Failed to generate unique contract number'));
+    }
 
     await this.auditLogService.log({
       entityType: 'contract',
@@ -200,5 +223,27 @@ export class ContractsService {
       utilizationPct,
       daysRemaining,
     });
+  }
+
+  private async generateContractNumber(): Promise<string> {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const prefix = `CT-${yyyy}${mm}${dd}`;
+
+    const latest = await this.contractRepository
+      .createQueryBuilder('contract')
+      .where('contract.number LIKE :prefix', { prefix: `${prefix}%` })
+      .orderBy('contract.number', 'DESC')
+      .getOne();
+
+    let sequence = 1;
+    if (latest) {
+      const lastSeq = parseInt(latest.number.split('-').pop() ?? '0', 10);
+      if (!isNaN(lastSeq)) sequence = lastSeq + 1;
+    }
+
+    return `${prefix}-${String(sequence).padStart(3, '0')}`;
   }
 }

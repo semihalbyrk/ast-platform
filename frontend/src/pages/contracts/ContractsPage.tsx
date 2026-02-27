@@ -50,7 +50,7 @@ export default function ContractsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[1400px]">
               <thead><tr className="bg-grey-50 border-b border-grey-200">
-                {['Number', 'Type', 'Client', 'Supplier', 'Transporter', 'Material', 'Price/ton', 'Imp Deduction', 'Agreed Weight', 'Freights', 'Processed', 'Notes', 'Period'].map((h) => (
+                {['Number', 'Type', 'Client (Opdrachtgever)', 'Supplier (Leverancier)', 'Transporter', 'Material', 'Price/ton', 'Imp Deduction', 'Agreed Weight', 'Freights', 'Processed', 'Notes', 'Period'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">
                     <span className="inline-flex items-center gap-1">{h}<ArrowUpDown size={12} className="text-grey-400" /></span>
                   </th>

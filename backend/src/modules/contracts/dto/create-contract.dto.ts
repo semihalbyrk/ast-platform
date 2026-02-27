@@ -14,7 +14,8 @@ import { ContractType, ContractStatus } from '../../../common/enums';
 export class CreateContractDto {
   @IsString()
   @MaxLength(50)
-  number: string;
+  @IsOptional()
+  number?: string;
 
   @IsEnum(ContractType)
   type: ContractType;

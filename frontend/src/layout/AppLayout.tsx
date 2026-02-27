@@ -25,7 +25,7 @@ const nav = [
   { to: '/yard-locations', label: 'Yard Locations', icon: MapPin },
   { to: '/contracts', label: 'Contracts', icon: FileText },
   { to: '/inventory', label: 'Inventory', icon: Boxes },
-  { to: '/purchase-orders', label: 'Purchase Orders', icon: Receipt },
+  { to: '/purchase-orders', label: 'Purchase Invoices', icon: Receipt },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
 ];
 
@@ -42,8 +42,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/contracts': 'Contracts',
   '/contracts/new': 'New Contract',
   '/inventory': 'Inventory',
-  '/purchase-orders': 'Purchase Orders',
-  '/purchase-orders/generate': 'Generate PO',
+  '/purchase-orders': 'Purchase Invoices',
+  '/purchase-orders/generate': 'Generate Purchase Invoice',
   '/reports': 'Reports',
 };
 

@@ -62,7 +62,7 @@ export default function PurchaseOrderDetailPage() {
   return (
     <div className="w-full">
       <button onClick={() => navigate('/purchase-orders')} className="inline-flex items-center gap-1.5 text-sm font-medium text-green-500 hover:text-green-700 mb-4">
-        <ArrowLeft size={16} strokeWidth={1.5} /> Back to Purchase Orders
+        <ArrowLeft size={16} strokeWidth={1.5} /> Back to Purchase Invoices
       </button>
 
       <div className="bg-white rounded-lg border border-grey-200 shadow-sm p-6 mb-6">

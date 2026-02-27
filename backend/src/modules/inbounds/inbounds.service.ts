@@ -192,6 +192,7 @@ export class InboundsService {
     inbound.impPct = dto.impPct;
     inbound.specialFindings = dto.specialFindings ?? null;
     inbound.qualityNotes = dto.qualityNotes ?? inbound.qualityNotes;
+    inbound.qualityCheckedAt = new Date();
     inbound.status = InboundStatus.QUALITY_CHECKED;
     inbound.updatedBy = userId;
 
@@ -240,6 +241,7 @@ export class InboundsService {
 
     inbound.tareWeight = dto.tareWeight;
     inbound.tareWeightAt = new Date();
+    inbound.weighedOutAt = new Date();
     inbound.netWeight = inbound.grossWeight! - dto.tareWeight;
     inbound.qualityNotes = dto.qualityNotes ?? inbound.qualityNotes;
     inbound.status = InboundStatus.WEIGHED_OUT;
@@ -297,6 +299,7 @@ export class InboundsService {
     this.calculateImpurityFields(inbound);
     this.calculateFinancials(inbound, inbound.contract!);
 
+    inbound.completedAt = new Date();
     inbound.status = InboundStatus.COMPLETED;
     inbound.updatedBy = userId;
 

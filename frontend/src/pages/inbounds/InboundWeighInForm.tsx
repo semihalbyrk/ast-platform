@@ -10,7 +10,7 @@ interface Contract {
   materialId: string; price: number; transporter?: Entity | null; transporterId?: string | null; endDate: string; status: string;
 }
 
-const RECEIVER = 'Amsterdam Scrap Terminal B.V.';
+const BUYER = 'Amsterdam Scrap Terminal B.V.';
 
 export default function InboundWeighInForm() {
   const navigate = useNavigate();
@@ -95,9 +95,9 @@ export default function InboundWeighInForm() {
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3">{error}</div>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div><label className={labelCls}>Client <span className="text-red-500">*</span></label>
+          <div><label className={labelCls}>Client (Opdrachtgever) <span className="text-red-500">*</span></label>
             <select required value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputCls}>
-              <option value="">Select client...</option>
+              <option value="">Select client (opdrachtgever)...</option>
               {clients.map((en) => <option key={en.id} value={en.id}>{en.name}</option>)}
             </select></div>
           <div><label className={labelCls}>Contract</label>
@@ -108,11 +108,11 @@ export default function InboundWeighInForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div><label className={labelCls}>Receiver</label><div className={lockedCls}>{RECEIVER}</div></div>
-          <div><label className={labelCls}>Supplier <span className="text-red-500">*</span></label>
+          <div><label className={labelCls}>Buyer (Afnemer)</label><div className={lockedCls}>{BUYER}</div></div>
+          <div><label className={labelCls}>Supplier (Leverancier) <span className="text-red-500">*</span></label>
             {supplierLocked ? <div className={lockedCls}>{suppliers.find((e) => e.id === supplierId)?.name ?? clients.find((e) => e.id === supplierId)?.name ?? supplierId}</div>
             : <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)} disabled={!hasContract && !clientId} className={!hasContract && !clientId ? disabledCls : inputCls}>
-              <option value="">Select supplier...</option>{suppliers.map((en) => <option key={en.id} value={en.id}>{en.name}</option>)}</select>}
+              <option value="">Select supplier (leverancier)...</option>{suppliers.map((en) => <option key={en.id} value={en.id}>{en.name}</option>)}</select>}
           </div>
         </div>
 

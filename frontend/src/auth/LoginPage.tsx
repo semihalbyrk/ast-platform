@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import evrekaIcon from '../../components/evreka-icon.png';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -25,12 +26,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-grey-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-brand-navy-900 flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg p-8">
         <div className="flex flex-col items-center">
-          <div className="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center mb-3">
-            <span className="text-white font-bold text-xl">A</span>
-          </div>
+          <img src={evrekaIcon} alt="Evreka icon" className="w-12 h-12 object-contain mb-3" />
           <h1 className="text-2xl font-bold text-grey-900">AST Platform</h1>
           <p className="text-sm text-grey-500 mt-1">Amsterdam Scrap Terminal</p>
         </div>
@@ -76,7 +75,7 @@ export default function LoginPage() {
             disabled={submitting}
             className="w-full h-9 bg-green-500 text-white rounded-md text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
-            {submitting ? 'Signing in...' : 'Sign in'}
+            {submitting ? 'Signing in...' : 'Login'}
           </button>
         </form>
       </div>

@@ -3,18 +3,23 @@ import { Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { Plus, MoreVertical } from 'lucide-react';
 
-const formatLabel = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+const ENTITY_LABELS: Record<string, string> = {
+  client: 'Client (Opdrachtgever)',
+  supplier: 'Supplier (Leverancier)',
+  transporter: 'Transporter',
+};
+
+const formatLabel = (value: string) => ENTITY_LABELS[value] ?? (value.charAt(0).toUpperCase() + value.slice(1));
 
 interface Entity {
   id: string;
   name: string;
   type: string[];
-  city?: string;
 }
 
 const TABS = [
-  { key: 'client', label: 'Clients' },
-  { key: 'supplier', label: 'Suppliers' },
+  { key: 'client', label: 'Clients (Opdrachtgevers)' },
+  { key: 'supplier', label: 'Suppliers (Leveranciers)' },
   { key: 'transporter', label: 'Transporters' },
 ] as const;
 
@@ -77,14 +82,13 @@ export default function EntitiesPage() {
 
         {filtered.length === 0 ? (
           <p className="px-5 py-8 text-grey-500 text-sm text-center">
-            No {activeTab === 'client' ? 'clients' : activeTab === 'supplier' ? 'suppliers' : 'transporters'} yet.
+            No {activeTab === 'client' ? 'clients (opdrachtgevers)' : activeTab === 'supplier' ? 'suppliers (leveranciers)' : 'transporters'} yet.
           </p>
         ) : (
           <table className="w-full text-sm">
             <thead><tr className="bg-grey-50 border-b border-grey-200">
               <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Name</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">City</th>
               <th className="w-12 px-4 py-3"></th>
             </tr></thead>
             <tbody>
@@ -92,7 +96,6 @@ export default function EntitiesPage() {
                 <tr key={e.id} className="border-b border-grey-100 hover:bg-grey-50 group">
                   <td className="px-4 py-3.5"><Link to={`/entities/${e.id}`} className="text-green-500 font-medium hover:underline">{e.name}</Link></td>
                   <td className="px-4 py-3.5 text-grey-700">{Array.isArray(e.type) ? e.type.map((t) => formatLabel(t)).join(', ') : e.type}</td>
-                  <td className="px-4 py-3.5 text-grey-700">{e.city || '—'}</td>
                   <td className="px-4 py-3.5 relative">
                     <button onClick={() => setMenuOpen(menuOpen === e.id ? null : e.id)}
                       className="opacity-0 group-hover:opacity-100 text-grey-400 hover:text-grey-600 transition-opacity">

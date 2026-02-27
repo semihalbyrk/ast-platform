@@ -4,7 +4,13 @@ import { api } from '../../api/client';
 import { ArrowLeft } from 'lucide-react';
 
 const ENTITY_TYPES = ['client', 'supplier', 'transporter'] as const;
-const formatLabel = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+const ENTITY_LABELS: Record<string, string> = {
+  client: 'Client (Opdrachtgever)',
+  supplier: 'Supplier (Leverancier)',
+  transporter: 'Transporter',
+};
+
+const formatLabel = (value: string) => ENTITY_LABELS[value] ?? (value.charAt(0).toUpperCase() + value.slice(1));
 
 interface FormData {
   name: string; type: string[]; street: string; city: string; postalCode: string;

@@ -35,7 +35,7 @@ export default function PurchaseOrdersPage() {
       <div className="bg-white rounded-lg border border-grey-200 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-grey-200">
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-semibold text-grey-900">Purchase Orders</h2>
+            <h2 className="text-base font-semibold text-grey-900">Purchase Invoices</h2>
             <Link to="/purchase-orders/generate" className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-500 hover:text-green-700">
               <Plus size={16} strokeWidth={2} /> Generate
             </Link>
@@ -43,11 +43,11 @@ export default function PurchaseOrdersPage() {
         </div>
 
         {orders.length === 0 ? (
-          <p className="px-5 py-8 text-grey-500 text-sm text-center">No purchase orders yet.</p>
+          <p className="px-5 py-8 text-grey-500 text-sm text-center">No purchase invoices yet.</p>
         ) : (
           <table className="w-full text-sm">
             <thead><tr className="bg-grey-50 border-b border-grey-200">
-              {['PO Number', 'Client', 'Status', 'Period', 'Total (excl VAT)', 'Issue Date'].map((h) => (
+              {['Purchase Invoice Number', 'Client (Opdrachtgever)', 'Status', 'Period', 'Total (excl VAT)', 'Issue Date'].map((h) => (
                 <th key={h} className={`px-4 py-3 text-xs font-medium text-grey-500 uppercase tracking-wide ${h.includes('Total') ? 'text-right' : 'text-left'}`}>
                   <span className="inline-flex items-center gap-1">{h}<ArrowUpDown size={12} className="text-grey-400" /></span>
                 </th>

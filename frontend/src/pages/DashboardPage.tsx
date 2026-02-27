@@ -38,7 +38,6 @@ interface DashboardData {
     number: string;
     supplier: string;
     days_remaining: number;
-    utilization_pct: number;
   }[];
 }
 
@@ -73,12 +72,12 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="bg-white rounded-lg border border-grey-200 shadow-sm p-5">
-              <div className="flex items-center gap-2 text-sm text-grey-500"><FileText size={16} strokeWidth={1.5} />Ready POs</div>
+              <div className="flex items-center gap-2 text-sm text-grey-500"><FileText size={16} strokeWidth={1.5} />Ready Purchase Invoices</div>
               <div className="text-2xl font-bold text-grey-900 mt-2">{data.purchase_orders.ready_count}</div>
               <div className="text-xs text-grey-400 mt-1">€{data.purchase_orders.ready_value_eur.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
             </div>
             <div className="bg-white rounded-lg border border-grey-200 shadow-sm p-5">
-              <div className="flex items-center gap-2 text-sm text-grey-500"><FileText size={16} strokeWidth={1.5} />Paid POs</div>
+              <div className="flex items-center gap-2 text-sm text-grey-500"><FileText size={16} strokeWidth={1.5} />Paid Purchase Invoices</div>
               <div className="text-2xl font-bold text-grey-900 mt-2">{data.purchase_orders.paid_count}</div>
               <div className="text-xs text-grey-400 mt-1">€{data.purchase_orders.paid_value_eur.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
             </div>
@@ -93,9 +92,8 @@ export default function DashboardPage() {
               <table className="w-full text-sm">
                 <thead><tr className="bg-grey-50 border-b border-grey-200">
                   <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Contract</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Supplier</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Supplier (Leverancier)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Days Left</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Utilization</th>
                 </tr></thead>
                 <tbody>
                   {data.contracts_at_risk.map((c) => (
@@ -103,7 +101,6 @@ export default function DashboardPage() {
                       <td className="px-4 py-3.5 font-medium text-grey-700">{c.number}</td>
                       <td className="px-4 py-3.5 text-grey-700">{c.supplier}</td>
                       <td className="px-4 py-3.5"><span className={c.days_remaining <= 7 ? 'text-red-600 font-medium' : 'text-grey-700'}>{c.days_remaining}d</span></td>
-                      <td className="px-4 py-3.5 text-grey-700">{c.utilization_pct}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -119,7 +116,7 @@ export default function DashboardPage() {
               <table className="w-full text-sm">
                 <thead><tr className="bg-grey-50 border-b border-grey-200">
                   <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Weegbon</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Supplier</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Supplier (Leverancier)</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">Material</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-grey-500 uppercase tracking-wide">Net Weight</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-grey-500 uppercase tracking-wide">Value</th>

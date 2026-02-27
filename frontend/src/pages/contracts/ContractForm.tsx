@@ -7,13 +7,13 @@ interface Option { id: string; name?: string; code?: string; type?: string[] }
 const CONTRACT_TYPES = [{ value: 'inkoop', label: 'Inkoop' }, { value: 'verkoop', label: 'Verkoop' }];
 
 interface FormData {
-  number: string; type: string; clientId: string; supplierId: string; transporterId: string;
+  type: string; clientId: string; supplierId: string; transporterId: string;
   materialId: string; price: string; impDeduction: string; agreedWeight: string; freights: string;
   startDate: string; endDate: string; processedWeight: string; notes: string;
 }
 
 const emptyForm: FormData = {
-  number: '', type: 'inkoop', clientId: '', supplierId: '', transporterId: '', materialId: '',
+  type: 'inkoop', clientId: '', supplierId: '', transporterId: '', materialId: '',
   price: '', impDeduction: '0', agreedWeight: '', freights: '', startDate: '', endDate: '', processedWeight: '0', notes: '',
 };
 
@@ -39,7 +39,7 @@ export default function ContractForm() {
       .then((res) => {
         const d = res.data;
         setForm({
-          number: (d.number as string) || '', type: (d.type as string) || 'inkoop',
+          type: (d.type as string) || 'inkoop',
           clientId: (d.clientId as string) || '', supplierId: (d.entityId as string) || '',
           transporterId: (d.transporterId as string) || '', materialId: (d.materialId as string) || '',
           price: d.price?.toString() || '', impDeduction: d.impDeduction?.toString() || '0',
@@ -58,7 +58,7 @@ export default function ContractForm() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault(); setError(''); setSubmitting(true);
     const payload = {
-      number: form.number, type: form.type, clientId: form.clientId, entityId: form.supplierId,
+      type: form.type, clientId: form.clientId, entityId: form.supplierId,
       transporterId: form.transporterId || undefined, materialId: form.materialId,
       price: Number(form.price), impDeduction: form.impDeduction ? Number(form.impDeduction) : 0,
       agreedVolume: Number(form.agreedWeight), freights: form.freights ? Number(form.freights) : undefined,
@@ -90,20 +90,16 @@ export default function ContractForm() {
       <form onSubmit={handleSubmit} className="form-card space-y-5">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3">{error}</div>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div><label className={labelCls}>Contract Number <span className="text-red-500">*</span></label>
-            <input type="text" required value={form.number} onChange={(e) => set('number', e.target.value)} className={inputCls} /></div>
-          <div><label className={labelCls}>Type <span className="text-red-500">*</span></label>
-            <select value={form.type} onChange={(e) => set('type', e.target.value)} className={inputCls}>
-              {CONTRACT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
-        </div>
+        <div><label className={labelCls}>Type <span className="text-red-500">*</span></label>
+          <select value={form.type} onChange={(e) => set('type', e.target.value)} className={inputCls}>
+            {CONTRACT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
 
-        <div><label className={labelCls}>Client <span className="text-red-500">*</span></label>
+        <div><label className={labelCls}>Client (Opdrachtgever) <span className="text-red-500">*</span></label>
           <select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className={inputCls}>
-            <option value="">Select client...</option>{clients.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+            <option value="">Select client (opdrachtgever)...</option>{clients.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div><label className={labelCls}>Supplier <span className="text-red-500">*</span></label>
+          <div><label className={labelCls}>Supplier (Leverancier) <span className="text-red-500">*</span></label>
             <select required value={form.supplierId} onChange={(e) => set('supplierId', e.target.value)} className={inputCls}>
               <option value="">Select...</option>{suppliers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
           <div><label className={labelCls}>Transporter <span className="text-red-500">*</span></label>

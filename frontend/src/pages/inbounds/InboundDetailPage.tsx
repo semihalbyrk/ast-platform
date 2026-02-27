@@ -17,7 +17,12 @@ interface Inbound {
   location?: { name: string };
   pricePerTon?: number;
   grossWeight?: number;
+  grossWeightAt?: string;
   tareWeight?: number;
+  tareWeightAt?: string;
+  qualityCheckedAt?: string;
+  weighedOutAt?: string;
+  completedAt?: string;
   netWeight?: number;
   hmsaPct?: number;
   hmsbPct?: number;
@@ -125,10 +130,10 @@ export default function InboundDetailPage() {
   if (!inbound) return <div className="text-grey-500 text-sm">Not found</div>;
 
   const stepIndexMap: Record<string, number> = {
-    weighed_in: 1,
-    in_yard: 1,
-    quality_checked: 2,
-    weighed_out: 3,
+    weighed_in: 0,
+    in_yard: 0,
+    quality_checked: 1,
+    weighed_out: 2,
     completed: 3,
   };
   const currentStep = stepIndexMap[inbound.status] ?? 0;
@@ -138,17 +143,24 @@ export default function InboundDetailPage() {
   const formatKg = (value?: number | null) => (value != null ? `${Number(value).toLocaleString()} kg` : '—');
   const formatPct = (value?: number) => (value != null ? `${Number(value).toFixed(2)}%` : '—');
   const formatEur = (value?: number) => (value != null ? `€${Number(value).toFixed(2)}` : '—');
+  const formatStepTime = (value?: string) => (value ? new Date(value).toLocaleString() : '—');
   const previewGross = inbound.grossWeight ?? null;
   const previewTare = inbound.tareWeight ?? tarePreviewWeight;
   const previewNet = previewGross != null && previewTare != null ? previewGross - previewTare : inbound.netWeight ?? null;
   const metaItems = [
     { label: 'License Plate', value: inbound.licensePlate ?? '—' },
-    { label: 'Supplier', value: inbound.supplier?.name ?? '—' },
+    { label: 'Supplier (Leverancier)', value: inbound.supplier?.name ?? '—' },
     { label: 'Transporter', value: inbound.transporter?.name ?? '—' },
     { label: 'Contract', value: inbound.contract?.number ?? '—' },
     { label: 'Date', value: new Date(inbound.inboundDate).toLocaleString() },
-    { label: 'Client', value: clientName },
+    { label: 'Client (Opdrachtgever)', value: clientName },
   ];
+  const stepTimestamps: Record<string, string | undefined> = {
+    weighed_in: inbound.grossWeightAt ?? inbound.inboundDate,
+    quality_checked: inbound.qualityCheckedAt,
+    weighed_out: inbound.weighedOutAt ?? inbound.tareWeightAt,
+    completed: inbound.completedAt,
+  };
 
   return (
     <div className="w-full">
@@ -199,6 +211,13 @@ export default function InboundDetailPage() {
               <div className="flex justify-between text-xs text-grey-500 mt-2">
                 {STATUS_STEPS.map((s) => <span key={s}>{formatEnumLabel(s)}</span>)}
               </div>
+              <div className="flex justify-between text-[11px] text-grey-400 mt-1">
+                {STATUS_STEPS.map((s) => (
+                  <span key={`${s}-time`} className="max-w-[24%] text-center truncate">
+                    {formatStepTime(stepTimestamps[s])}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -212,8 +231,6 @@ export default function InboundDetailPage() {
                 <div><span className="text-grey-500">HMSA:</span> <span className="font-semibold text-grey-900">{formatPct(inbound.hmsaPct)}</span></div>
                 <div><span className="text-grey-500">HMSB:</span> <span className="font-semibold text-grey-900">{formatPct(inbound.hmsbPct)}</span></div>
                 <div><span className="text-grey-500">Impurity:</span> <span className="font-semibold text-grey-900">{formatPct(inbound.impPct)}</span></div>
-                <div><span className="text-grey-500">Imp Weight:</span> <span className="font-semibold text-grey-900">{formatKg(inbound.impWeight)}</span></div>
-                <div><span className="text-grey-500">Net after Imp:</span> <span className="font-semibold text-grey-900">{formatKg(inbound.netWeightAfterImp)}</span></div>
               </div>
             </div>
           )}
@@ -297,20 +314,20 @@ export default function InboundDetailPage() {
             {existingPoId ? (
               <button onClick={() => navigate(`/purchase-orders/${existingPoId}`)}
                 className="h-9 px-4 bg-green-500 text-white rounded-md text-sm font-semibold hover:bg-green-700 inline-flex items-center gap-2">
-                <FileText size={16} strokeWidth={1.5} /> View PO
+                <FileText size={16} strokeWidth={1.5} /> View Purchase Invoice
               </button>
             ) : (
               <button disabled={acting || poChecking} onClick={async () => {
                 const clientId = inbound.contract?.entityId ?? inbound.supplierId;
-                if (!clientId) { setActionError('No client found for this inbound'); return; }
+                if (!clientId) { setActionError('No Client (Opdrachtgever) found for this inbound'); return; }
                 setActing(true); setActionError('');
                 try {
                   const res = await api.post<{ data: { id: string } }>('/api/purchase-orders/generate', { clientId, inboundIds: [inbound.id] });
                   navigate(`/purchase-orders/${res.data.id}`);
-                } catch (err) { setActionError(err instanceof Error ? err.message : 'PO generation failed'); }
+                } catch (err) { setActionError(err instanceof Error ? err.message : 'Purchase Invoice generation failed'); }
                 finally { setActing(false); }
               }} className="h-9 px-4 bg-green-500 text-white rounded-md text-sm font-semibold hover:bg-green-700 disabled:opacity-50">
-                {poChecking ? 'Checking...' : acting ? 'Generating...' : 'Generate PO'}
+                {poChecking ? 'Checking...' : acting ? 'Generating...' : 'Generate Purchase Invoice'}
               </button>
             )}
           </div>
@@ -338,7 +355,24 @@ export default function InboundDetailPage() {
           </div>
           <div>
             <div className="text-xs text-grey-500 uppercase mb-1">Net Weight</div>
-            <div className="text-xl font-bold text-green-700">{formatKg(previewNet)}</div>
+            <div className="text-lg font-semibold text-grey-900">{formatKg(previewNet)}</div>
+          </div>
+        </div>
+        <div className="pt-2 border-t border-grey-200">
+          <div className="rounded-lg border border-green-200 bg-green-25/60 px-3.5 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-green-700 mb-2">
+              Impurity Adjustment
+            </div>
+            <div className="space-y-2">
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-grey-500">Imp Weight</div>
+                <div className="text-base font-semibold text-grey-900">{formatKg(inbound.impWeight)}</div>
+              </div>
+              <div className="rounded-md bg-green-500/10 border border-green-300 px-2.5 py-2">
+                <div className="text-[11px] uppercase tracking-wide text-green-700">Net Weight After Impurity</div>
+                <div className="text-xl font-bold text-green-700 leading-tight">{formatKg(inbound.netWeightAfterImp)}</div>
+              </div>
+            </div>
           </div>
         </div>
       </aside>

@@ -84,6 +84,15 @@ export class Inbound extends SoftDeletableEntity {
   @Column({ type: 'timestamptz', nullable: true, name: 'tare_weight_at' })
   tareWeightAt: Date | null;
 
+  @Column({ type: 'timestamptz', nullable: true, name: 'quality_checked_at' })
+  qualityCheckedAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'weighed_out_at' })
+  weighedOutAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'completed_at' })
+  completedAt: Date | null;
+
   @Column({ type: 'integer', nullable: true, name: 'net_weight' })
   netWeight: number | null;
 

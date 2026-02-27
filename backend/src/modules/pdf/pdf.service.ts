@@ -54,7 +54,7 @@ export class PdfService {
         ['Weegbon Nr:', inbound.weegbonNr],
         ['Datum:', this.formatDate(inbound.inboundDate)],
         ['Kenteken:', inbound.licensePlate ?? '-'],
-        ['Leverancier:', inbound.supplier?.name ?? '-'],
+        ['Supplier (Leverancier):', inbound.supplier?.name ?? '-'],
         ['Materiaal:', inbound.material?.name ?? '-'],
         ['Contract:', inbound.contract?.number ?? '-'],
       ];

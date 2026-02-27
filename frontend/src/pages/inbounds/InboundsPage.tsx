@@ -60,7 +60,7 @@ export default function InboundsPage() {
           <>
             <table className="w-full text-sm">
               <thead><tr className="bg-grey-50 border-b border-grey-200">
-                {['Weegbon Nr', 'Date', 'Plate', 'Supplier', 'Material'].map((h) => (
+                {['Weegbon Nr', 'Date', 'Plate', 'Supplier (Leverancier)', 'Material'].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-grey-500 uppercase tracking-wide">
                     <span className="inline-flex items-center gap-1">{h}<ArrowUpDown size={12} className="text-grey-400" /></span>
                   </th>

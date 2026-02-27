@@ -38,8 +38,8 @@ export default function ReportsPage() {
       </div>
 
       <div className="mt-4 bg-white rounded-lg border border-grey-200 shadow-sm p-6">
-        <h2 className="text-base font-semibold text-grey-900">Supplier Summary</h2>
-        <p className="text-sm text-grey-500 mt-1">Export supplier delivery summary for a period.</p>
+        <h2 className="text-base font-semibold text-grey-900">Supplier (Leverancier) Summary</h2>
+        <p className="text-sm text-grey-500 mt-1">Export Supplier (Leverancier) delivery summary for a period.</p>
         <div className="flex items-end gap-3 mt-4 flex-wrap">
           <div><label className={labelCls}>Start</label><input type="date" value={suppStart} onChange={(e) => setSuppStart(e.target.value)} className={inputCls} /></div>
           <div><label className={labelCls}>End</label><input type="date" value={suppEnd} onChange={(e) => setSuppEnd(e.target.value)} className={inputCls} /></div>
