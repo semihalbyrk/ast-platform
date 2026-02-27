@@ -47,6 +47,21 @@ const PAGE_TITLES: Record<string, string> = {
   '/reports': 'Reports',
 };
 
+const DYNAMIC_TITLES: Array<{ pattern: RegExp; title: string }> = [
+  { pattern: /^\/inbounds\/[^/]+$/, title: 'Inbound Details' },
+  { pattern: /^\/entities\/[^/]+$/, title: 'Entity Details' },
+  { pattern: /^\/materials\/[^/]+$/, title: 'Material Details' },
+  { pattern: /^\/yard-locations\/[^/]+$/, title: 'Location Details' },
+  { pattern: /^\/contracts\/[^/]+$/, title: 'Contract Details' },
+  { pattern: /^\/purchase-orders\/[^/]+$/, title: 'Invoice Details' },
+];
+
+function resolvePageTitle(pathname: string): string {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  const match = DYNAMIC_TITLES.find((d) => d.pattern.test(pathname));
+  return match?.title ?? '';
+}
+
 function getSection(pathname: string): string | null {
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length === 0) return null;
@@ -61,7 +76,7 @@ export default function AppLayout() {
 
   const pathname = location.pathname;
   const section = getSection(pathname);
-  const pageTitle = PAGE_TITLES[pathname] || section || 'Page';
+  const pageTitle = resolvePageTitle(pathname) || section || 'Page';
   const isSubPage = pathname !== '/' && pathname.split('/').filter(Boolean).length > 1;
 
   return (

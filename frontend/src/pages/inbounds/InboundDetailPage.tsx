@@ -302,12 +302,21 @@ export default function InboundDetailPage() {
         {/* Completed actions */}
         {inbound.status === 'completed' && (
           <div className="mb-6 flex gap-3">
-            <button onClick={() => {
+            <button onClick={async () => {
               const token = getToken();
-              const link = document.createElement('a');
-              link.href = `/api/inbounds/${id}/pdf`;
-              if (token) link.href += `?token=${encodeURIComponent(token)}`;
-              link.target = '_blank'; link.click();
+              try {
+                const res = await fetch(`/api/inbounds/${id}/pdf`, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+                if (!res.ok) { setActionError('PDF indirilemedi'); return; }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${inbound.weegbonNr}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch { setActionError('PDF indirilemedi'); }
             }} className="h-9 px-4 bg-white text-grey-700 border border-grey-300 rounded-md text-sm font-semibold hover:bg-grey-50 inline-flex items-center gap-2">
               <Download size={16} strokeWidth={1.5} /> Download Ticket PDF
             </button>

@@ -86,10 +86,10 @@ export class InboundsController {
     @Res() res: Response,
   ) {
     const { data: inbound } = await this.inboundsService.findOne(id);
-    if (!inbound.ticket?.pdfUrl) {
+    if (inbound.status !== InboundStatus.COMPLETED) {
       throw new NotFoundException('PDF not yet generated for this inbound');
     }
-    const buffer = await this.pdfService.getWeegbonPdf(inbound.weegbonNr);
+    const buffer = await this.pdfService.renderWeegbonBuffer(inbound);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="${inbound.weegbonNr}.pdf"`,

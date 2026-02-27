@@ -37,11 +37,18 @@ export class PdfService {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      doc.fontSize(18).font('Helvetica-Bold').text('WEEGBON', { align: 'center' });
+      const logoDist = path.join(__dirname, 'assets', 'AST-Logo.png');
+      const logoSrc = path.join(process.cwd(), 'src', 'modules', 'pdf', 'assets', 'AST-Logo.png');
+      const logoPath = fs.existsSync(logoDist) ? logoDist : logoSrc;
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, { width: 110 });
+        doc.moveDown(0.5);
+      }
+      doc.fontSize(18).font('Helvetica-Bold').text('WEEGBON', { align: 'left' });
       doc.moveDown(0.3);
-      doc.fontSize(10).font('Helvetica').text(AST_COMPANY.name, { align: 'center' });
-      doc.text(`${AST_COMPANY.street}, ${AST_COMPANY.city}`, { align: 'center' });
-      doc.text(`Tel: ${AST_COMPANY.tel}`, { align: 'center' });
+      doc.fontSize(10).font('Helvetica').text(AST_COMPANY.name, { align: 'left' });
+      doc.text(`${AST_COMPANY.street}, ${AST_COMPANY.city}`, { align: 'left' });
+      doc.text(`Tel: ${AST_COMPANY.tel}`, { align: 'left' });
       doc.moveDown(1);
       this.drawLine(doc);
       doc.moveDown(0.5);
@@ -138,7 +145,9 @@ export class PdfService {
 
       // ─── HEADER ─────────────────────────────────────────
       // Right: AST logo + company info
-      const logoPath = path.join(__dirname, 'assets', 'AST-Logo.png');
+      const logoDist = path.join(__dirname, 'assets', 'AST-Logo.png');
+      const logoSrc = path.join(process.cwd(), 'src', 'modules', 'pdf', 'assets', 'AST-Logo.png');
+      const logoPath = fs.existsSync(logoDist) ? logoDist : logoSrc;
       if (fs.existsSync(logoPath)) {
         doc.image(logoPath, pageW - margin - 140, margin, { width: 140 });
       }
@@ -309,6 +318,10 @@ export class PdfService {
   }
 
   // ─── GET PDF BUFFERS (for download) ────────────────────
+
+  async renderWeegbonBuffer(inbound: Inbound): Promise<Buffer> {
+    return this.buildWeegbonPdf(inbound);
+  }
 
   async getWeegbonPdf(weegbonNr: string): Promise<Buffer> {
     return this.storageService.getBuffer(`tickets/${weegbonNr}.pdf`);
