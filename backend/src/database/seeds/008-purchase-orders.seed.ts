@@ -50,7 +50,7 @@ export async function seedPurchaseOrders(
     ) VALUES (
       $1, $2, $3,
       $4, $5, $6, $7,
-      'draft'::po_status_enum, $8, 0, $8, '0'
+      'ready'::po_status_enum, $8, 0, $8, '0'
     ) RETURNING "id"`,
     [
       '2251066',
