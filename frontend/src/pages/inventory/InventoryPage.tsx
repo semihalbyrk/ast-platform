@@ -57,7 +57,7 @@ export default function InventoryPage() {
 
   const groupedPositions = positions.reduce<Record<string, { key: string; label: string; rows: Position[] }>>((acc, p) => {
     const key = p.location?.id ?? p.location?.code ?? 'unknown';
-    const label = p.location?.code ? `${p.location.code} — ${p.location.name}` : (p.location?.name ?? 'Unknown Location');
+    const label = p.location?.name ?? 'Unknown Location';
     if (!acc[key]) acc[key] = { key, label, rows: [] };
     acc[key].rows.push(p);
     return acc;

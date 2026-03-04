@@ -1,5 +1,12 @@
 # Local Dev Setup
 
+# 1.Aşama Yazılım Productiona hazır hale getirilmesi -> burası için bir instructions/referans çıkarılacak
+# 2.Aşama Infra kurulması
+# 3.Aşama CI/CD github repoma push attığımda sunucuya nasıl deploy olacak
+# 4.Aşama Güvenlik
+# Deploy alana kadar minio yerine s3 kullanmasına bakabiliriz, s3 credentials verilecek boş bucket(harddisk) erişimi için izin verilecek
+# PDF ürettiğim yerde MinIO kullanmasına gerek yok
+
 ## Start
 
 ```bash
