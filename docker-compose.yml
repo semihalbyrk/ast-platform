@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: ast-postgres
     ports:
-      - '5432:5432'
+      - '127.0.0.1:10098:5432'
     environment:
       POSTGRES_DB: ast_db
       POSTGRES_USER: ast_user
@@ -17,13 +15,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - evreka_ast-network
 
   minio:
     image: minio/minio:latest
     container_name: ast-minio
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '127.0.0.1:10097:9000'
+      - '127.0.0.1:10096:9001'
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ast_minio
@@ -35,6 +35,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    networks:
+      - evreka_ast-network
 
   api:
     build:
@@ -42,7 +44,7 @@ services:
       dockerfile: Dockerfile
     container_name: ast-api
     ports:
-      - '3000:3000'
+      - '127.0.0.1:10095:3000'
     env_file:
       - .env
     environment:
@@ -57,7 +59,9 @@ services:
       - ./backend:/app
       - /app/node_modules
     command: >
-      sh -c "npm run migration:run && npm run seed && npm run start:dev"
+      sh -c "npm install && npm run migration:run && npm run seed && npm run start:dev"
+    networks:
+      - evreka_ast-network
 
   web:
     build:
@@ -65,12 +69,18 @@ services:
       dockerfile: Dockerfile
     container_name: ast-web
     ports:
-      - '5173:5173'
+      - '127.0.0.1:10099:5173'
     depends_on:
       - api
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    networks:
+      - evreka_ast-network
+
+networks:
+  evreka_ast-network:
+    driver: bridge
 
 volumes:
   pgdata:
